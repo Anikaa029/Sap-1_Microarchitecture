@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Instruction to Hex Compiler</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .container {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 18px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        width: 650px;
+        max-width: 95%;
+        text-align: center;
+        animation: fadeIn 1s ease-in-out;
+        position: relative;
+      }
+
+      @keyframes fadeIn {
+        from {
+          transform: translateY(-30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        color: #343a40;
+        font-size: 26px;
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      textarea {
+        width: 100%;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 14px;
+        font-family: "Courier New", monospace;
+        resize: vertical;
+        min-height: 150px;
+        outline: none;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.08);
+        transition: 0.3s;
+      }
+
+      textarea:focus {
+        border-color: #6a11cb;
+        box-shadow: 0 0 12px rgba(106, 17, 203, 0.4);
+      }
+
+      button {
+        background: linear-gradient(45deg, #ff512f, #dd2476);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        margin-top: 15px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background: linear-gradient(45deg, #dd2476, #ff512f);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 6px 15px rgba(221, 36, 118, 0.4);
+      }
+
+      h3 {
+        margin-top: 25px;
+        color: #495057;
+      }
+
+      pre {
+        background: #212529;
+        color: #00ff95;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: left;
+        font-family: "Courier New", monospace;
+        font-size: 15px;
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+        overflow-x: auto;
+        min-height: 80px;
+        position: relative;
+      }
+
+      /* Typing cursor animation */
+      .cursor {
+        display: inline-block;
+        width: 8px;
+        height: 18px;
+        background: #00ff95;
+        margin-left: 3px;
+        animation: blink 0.8s infinite;
+      }
+
+      @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+
+      /* Floating background bubbles */
+      .bubble {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        animation: float 10s infinite ease-in-out;
+      }
+
+      @keyframes float {
+        0% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-40px) scale(1.2); }
+        100% { transform: translateY(0) scale(1); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Decorative bubbles -->
+    <div class="bubble" style="width: 80px; height: 80px; top: 10%; left: 10%;"></div>
+    <div class="bubble" style="width: 60px; height: 60px; top: 70%; left: 20%;"></div>
+    <div class="bubble" style="width: 100px; height: 100px; top: 40%; right: 15%;"></div>
+
+    <div class="container">
+      <h2>✨ Instruction to Hex Compiler ✨</h2>
+      <textarea id="input" rows="10" cols="50">
+LDA 13
+LDB 14
+ADD
+STA 15
+HLT
+ORG 13
+DEC 25
+DEC 15
+      </textarea>
+      <br />
+      <button onclick="compile()">⚡ Compile</button>
+      <h3>Hex Output:</h3>
+      <pre id="output"></pre>
+    </div>
+
+    <script>
+      const OPCODES = {
+        LDA: "1",
+        LDB: "2",
+        ADD: "3",
+        STA: "5",
+        HLT: "F",
+      };
+
+      function compile() {
+        const lines = document.getElementById("input").value.trim().split("\n");
+        const memory = Array(256).fill("00");
+        let pointer = 0;
+
+        for (let line of lines) {
+          line = line.trim();
+          if (line === "" || line.startsWith(";")) continue;
+
+          const parts = line.split(/\s+/);
+          const instr = parts[0].toUpperCase();
+          const operand = parts[1] !== undefined ? parseInt(parts[1]) : null;
+
+          if (instr === "ORG") {
+            if (operand !== null) pointer = operand;
+          } else if (instr === "DEC") {
+            memory[pointer++] = operand
+              .toString(16)
+              .toUpperCase()
+              .padStart(2, "0");
+          } else if (OPCODES[instr]) {
+            let opcode = OPCODES[instr];
+            let addr =
+              operand !== null
+                ? operand.toString(16).toUpperCase().padStart(1, "0")
+                : "0";
+            memory[pointer++] = (opcode + addr).padStart(2, "0");
+          } else {
+            alert("Unknown instruction: " + instr);
+            return;
+          }
+        }
+
+        let output = memory.slice(0, 16).join(" ");
+
+        // Typing effect for output
+        let outputBox = document.getElementById("output");
+        outputBox.innerHTML = ""; 
+        let i = 0;
+        function typeWriter() {
+          if (i < output.length) {
+            outputBox.innerHTML += output.charAt(i);
+            i++;
+            setTimeout(typeWriter, 40);
+          } else {
+            outputBox.innerHTML += '<span class="cursor"></span>';
+          }
+        }
+        typeWriter();
+      }
+    </script>
+  </body>
+</html>
